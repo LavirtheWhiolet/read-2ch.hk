@@ -1,1 +1,1 @@
-web: rackup -s puma -p $PORT -E deployment
+web: rackup -s puma -p $PORT -E deployment read2ch.ru
