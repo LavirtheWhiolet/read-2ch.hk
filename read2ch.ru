@@ -31,7 +31,7 @@ class SearchPhraseWebApp < Sinatra::Application
       begin
         open(uri, HEADERS) { |io| io.read }.
           map { |s| JSON.parse("{\"data\": #{s}}")['data'] }.
-          tap { |r| halt 404, r["Error"] if r.key? "Error" }.
+          tap { |r| halt 404, r["Error"] if r.is_a? Hash and r.key? "Error" }.
           map do |post|
             post = OpenStruct.new(post)
             post.files ||= []
