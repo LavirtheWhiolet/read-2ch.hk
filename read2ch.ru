@@ -128,8 +128,9 @@ User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:41.0) Gecko/20100101 Firefo
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 Accept-Language: en-US,en;q=0.5
 Accept-Encoding: gzip, deflate
-Cookie: __cfduid=dd7a3e2e64b220e1932dbe20c0cdb9c261425475175; __utma=86605531.1745053434.1425477609.1442596469.1444237778.504; __utmz=86605531.1442596469.503.241.utmcsr=anon.fm|utmccn=(referral)|utmcmd=referral|utmcct=/info.html; wakabastyle=; usercode_auth=24ffaf6d82692d95746a61ef1c1436ce; __utmc=86605531
+Cookie: ageallow=1; __cfduid=d50ae52b0a244dd09a09e0bfb1cbdc4011444542009; cf_clearance=d6f03e7093daba873b774c7f6449b98930a98ea6-1444542014-604800; usercode_auth=24ffaf6d82692d95746a61ef1c1436ce
 Connection: keep-alive
+Cache-Control: max-age=0
     TXT
     lines.
     reject { |line| line.strip.empty? }.
