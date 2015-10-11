@@ -12,8 +12,8 @@ class Array
 end
 
 class Object
-
-  def map(&f)
+  
+  def map1(&f)
     f.(self)
   end
   
@@ -25,13 +25,14 @@ class SearchPhraseWebApp < Sinatra::Application
     #
     headers "Content-Type" => "text/html; charset=utf8"
     # 
-    uri = "https://2ch.hk/makaba/mobile.fcgi?task=get_thread&board=#{params[:board]}&thread=#{params[:thread]}&post=0"
+    uri = "https://2ch.hk/#{params[:board]}/res/#{params[:thread]}.json"
     #
     posts =
       begin
         open(uri, HEADERS) { |io| io.read }.
-          map { |s| JSON.parse("{\"data\": #{s}}")['data'] }.
+          map1 { |s| JSON.parse("{\"data\": #{s}}")['data'] }.
           tap { |r| halt 404, r["Error"] if r.is_a? Hash and r.key? "Error" }.
+          map1 { |d| d['threads'][0]['posts'] }.
           map do |post|
             post = OpenStruct.new(post)
             post.files ||= []
