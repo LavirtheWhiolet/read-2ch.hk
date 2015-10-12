@@ -99,7 +99,7 @@ module Utils
       Net::HTTP.start(host_uri.host, host_uri.port, :use_ssl => host_uri.scheme == 'https') do |http|
         http.request(host_request)
       end
-    [
+    return [
       host_response.code,
       host_response.headers.
         map do |key, value|
@@ -107,6 +107,21 @@ module Utils
           when "set-cookie"
             # TODO: Process "domain" parameter of "set-cookie" correctly.
             [key, value.gsub(/domain\=(.*?);/, "")]
+          when "location"
+            if host_response.code == "301" then
+              this_host_uri = URI("http://#{env["HTTP_HOST"]}")
+              [
+                key,
+                begin
+                  l = URI(value)
+                  l.host = this_host_uri.host
+                  l.port = this_host_uri.port
+                  l.to_s
+                end
+              ]
+            else
+              [key, value]
+            end
           else
             [key, value]
           end
@@ -134,7 +149,7 @@ class Read2ch_hk
       #
       if /^\/(?<board>.*?)\/res\/(?<thread>.*?)\.html$/ =~ env["PATH_INFO"] and
           board != "test"
-        # Forward the request to 2ch.hk API.
+        # Query 2ch.hk API.
         _2ch_hk_response_code, _2ch_hk_response_headers, _2ch_hk_response_body = begin
           path = "/#{board}/res/#{thread}.json"
           request = env.
@@ -151,14 +166,7 @@ class Read2ch_hk
           forward_to_2ch_hk_and_unhide_some_content(request)
         end
         #
-        if _2ch_hk_response_code == 301 then
-          halt [
-            301,
-            _2ch_hk_response_headers.
-              rewrite("location") { |uri| URI(uri).tap { |u| u.host = env["HTTP_HOST"] } },
-            _2ch_hk_response_body
-          ]
-        elsif _2ch_hk_response_code != 200 then
+        if _2ch_hk_response_code != "200" then
           halt forward_to_2ch_hk_and_unhide_some_content(env)
         end
         #
