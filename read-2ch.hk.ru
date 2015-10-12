@@ -183,7 +183,7 @@ class Read2ch_hk
             post
           end.
           each_with_index { |post, i| post.rel_num = i+1 }
-        [
+        return [
           200,
           {
             "Content-Type" => "text/html; charset=utf8"
@@ -199,7 +199,7 @@ class Read2ch_hk
   private
   
   # Modifies +env+ to unhide some content on 2ch.hk which is hidden due to
-  # Mizulina's rampage and Utils#forwards it to 2ch.hk.
+  # Mizulina's rampage and Utils#forward()-s it to 2ch.hk.
   def forward_to_2ch_hk_and_unhide_some_content(env)
     unhiding_cookie = "usercode_auth=24ffaf6d82692d95746a61ef1c1436ce"
     env =
