@@ -114,6 +114,7 @@ module Utils
                 v = URI(value)
                 v.host = this_host_uri.host
                 v.port = this_host_uri.port
+                v.path = "#{env["SCRIPT_NAME"]}/#{v.path}"
                 v.to_s
               end
             end
