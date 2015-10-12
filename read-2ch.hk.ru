@@ -15,6 +15,7 @@ end
 
 class Object
   
+  # passes this Object to +f+ and returns +f+'s result.
   def map1(&f)
     f.(self)
   end
@@ -37,6 +38,12 @@ class Hash
     reject { |key, value| keys.include? key }
   end
   
+  # +f+ is passed with value at +key+.
+  # 
+  # It returns Hash with the new entry.
+  # 
+  # If this Hash does not have +key+ then it just returns this Hash.
+  # 
   def rewrite(key, &f)
     if self.has_key? key then self[key] = f.(self[key]); end
     self
