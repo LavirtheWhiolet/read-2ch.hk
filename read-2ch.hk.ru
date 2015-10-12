@@ -170,7 +170,7 @@ class Read2ch_hk
           forward_to_2ch_hk_and_unhide_some_content(request)
         end
         if dvach_hk_response.status != 200 then
-          halt dvach_hk_response
+          halt(dvach_hk_response)
         end
         posts = dvach_hk_response.body.
           map1 { |b| JSON.parse("{\"data\": #{read1(b)}}")['data'] }.
