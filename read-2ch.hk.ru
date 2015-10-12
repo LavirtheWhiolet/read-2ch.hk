@@ -53,7 +53,7 @@ def forward(env, host_uri)
     reject_keys("REFERER")
     to_h.
     merge("HOST" => host)
-  http_request =
+  host_request =
     case env["REQUEST_METHOD"]
     when "GET" then Net::HTTP::Get
     when "POST" then Net::HTTP::Post
@@ -67,13 +67,13 @@ def forward(env, host_uri)
     tap do |r|
       r.body_stream = env["rack.input"]
     end
-  http_response =
+  host_response =
     Net::HTTP.start(host_uri.host, host_uri.port, :use_ssl => uri.scheme == 'https') do |http|
-      http.request(http_request)
+      http.request(host_request)
     end
   [
-    http_response.code,
-    http_response.headers.
+    host_response.code,
+    host_response.headers.
       map do |key, value|
         case key.downcase
         when "set-cookie"
@@ -83,6 +83,6 @@ def forward(env, host_uri)
           [key, value]
         end
       end,
-    [http_response.body]
+    [host_response.body]
   ]
 end
