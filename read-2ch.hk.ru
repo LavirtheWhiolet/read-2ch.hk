@@ -154,7 +154,6 @@ class Read2ch_hk
     allow_halt do
       if /^\/(?<board>.*?)\/res\/(?<thread>.*?)\.html$/ =~ env["PATH_INFO"] and
           board != "test"
-        # Query 2ch.hk API.
         _2ch_hk_response_code, _2ch_hk_response_headers, _2ch_hk_response_body = begin
           path = "/#{board}/res/#{thread}.json"
           request = env.
