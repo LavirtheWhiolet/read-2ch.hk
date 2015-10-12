@@ -38,7 +38,7 @@ def read_body(rack_response)
   return body
 end
 
-# forwards Rack +env+ to host at +host_uri+.
+# forwards Rack +env+ to host at +host_uri+ (URI).
 # 
 # +SCRIPT_NAME+ is ignored.
 # 
@@ -85,4 +85,8 @@ def forward(env, host_uri)
       end,
     [host_response.body]
   ]
+end
+
+run lambda do |env|
+  forward(env, URI("http://2ch.hk"))
 end
