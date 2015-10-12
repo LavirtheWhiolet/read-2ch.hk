@@ -116,8 +116,8 @@ def allow_halt(&block)
   catch(:halt, &block)
 end
 
-def halt(result = nil)
-  throw(:halt, result)
+def halt(allow_halt_result = nil)
+  throw(:halt, allow_halt_result)
 end
 
 class Read2ch_hk
@@ -129,9 +129,7 @@ class Read2ch_hk
           board != "test"
         # Forward the request to 2ch.hk API.
         _2ch_hk_response_code, _2ch_hk_response_headers, _2ch_hk_response_body = begin
-          # 
           path = "/#{board}/res/#{thread}.json"
-          # 
           request =
             add_unhiding_cookie(env).
             merge(
@@ -144,20 +142,17 @@ class Read2ch_hk
               "HTTP_ACCEPT_ENCODING",
               "HTTP_CONNECTION_KEEP_ALIVE"
             )
-          #
-          forward(request, URI("http://2ch.hk"))
+          forward_to_2ch_hk_and_unhide_some_boards(request)
         end
         #
         if _2ch_hk_response_code != "200" then
-          halt(forward(env, URI("http://2ch.hk")))
+          halt(forward_to_2ch_hk_and_unhide_some_boards(env))
         end
-        # 
-        _2ch_hk_response_body = read1(_2ch_hk_response_body)
         #
         posts = _2ch_hk_response_body.
-          map1 { |s| JSON.parse("{\"data\": #{s}}")['data'] }.
-          tap { |r| halt([503, {}, [r["Error"]]]) if r.is_a? Hash and r.key? "Error" }.
-          map1 { |d| d['threads'][0]['posts'] }.
+          map1 { |b| JSON.parse("{\"data\": #{read1(b)}}")['data'] }.
+          tap { |b| halt([503, {}, [b["Error"]]]) if b.is_a? Hash and b.key? "Error" }.
+          map1 { |b| b['threads'][0]['posts'] }.
           map do |post|
             post = OpenStruct.new(post)
             post.files ||= []
@@ -175,12 +170,16 @@ class Read2ch_hk
         ]
       #
       else
-        forward(env, URI("http://2ch.hk"))
+        forward_to_2ch_hk_and_unhide_some_boards(env)
       end
     end
   end
   
   private
+  
+  def forward_to_2ch_hk_and_unhide_some_boards(env)
+    forward(add_unhiding_cookie(env), URI("http://2ch.hk"))
+  end
   
   # Adds a cookie to Rack +env+ to unhide some boards which are hidden due to
   # Mizulina's rampage.
