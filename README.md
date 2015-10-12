@@ -8,9 +8,9 @@ It also unhides some content hidden due to Mizulina's rampage!
 
 ### How to run
 
-You need [Ruby](http://ruby-lang.org) 1.9.3 or above and [Rack](http://rack.github.io/). Just run the following command:
+You need [Ruby](http://ruby-lang.org) 1.9.3 or above and [Rack](http://rack.github.io/). After install just run the following command in this directory:
 
-    rackup read-2ch.hk.ru
+    rackup
 
 ### Help! I can not open my favorite thread!
 
@@ -26,9 +26,9 @@ The cookies this program uses for accessing 2ch.hk are likely to become outdated
 
 ### Как запускать
 
-Вам понадобится [Ruby](http://ruby-lang.org) 1.9.3 или выше и [Rack](http://rack.github.io/). Просто дайте следующую команду:
+Вам понадобится [Ruby](http://ruby-lang.org) 1.9.3 или выше и [Rack](http://rack.github.io/). После установки просто дайте следующую команду в этой директории:
 
-    rackup read-2ch.hk.ru
+    rackup
 
 ### Помогите! Я не могу открыть мой любимый тред!
 
