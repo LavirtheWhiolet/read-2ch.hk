@@ -77,7 +77,7 @@ module Utils
   # 
   # It returns Rack::Response.
   # 
-  # TODO: Do not read entire response body.
+  # TODO: Do not read entire host response body.
   # 
   def forward(env, host_uri)
     headers = env.
