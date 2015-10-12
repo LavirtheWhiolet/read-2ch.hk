@@ -77,7 +77,7 @@ module Utils
   # 
   # It returns Rack::Response.
   # 
-  # TODO: Do not read entire response body.
+  # TODO: Do not read entire host response body.
   # 
   def forward(env, host_uri)
     headers = env.
@@ -151,6 +151,12 @@ class Read2ch_hk
   include Utils
   
   def call(env)
+    call0(env).finish()
+  end
+  
+  private
+  
+  def call0(env)
     allow_halt do
       if /^\/(?<board>.*?)\/res\/(?<thread>.*?)\.html$/ =~ env["PATH_INFO"] and
           board != "test"
