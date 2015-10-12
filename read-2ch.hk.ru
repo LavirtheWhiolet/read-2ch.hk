@@ -11,6 +11,16 @@ class Array
   
 end
 
+class Net::HTTPResponse
+  
+  def headers
+    h = {}
+    each_header { |key, value| h[key] = value }
+    return h
+  end
+  
+end
+
 class Hash
   
   def reject_keys(*keys)
@@ -50,7 +60,7 @@ def forward(env, host_uri)
     reject { |key, value| key.nil? }.
     map { |key, value| [key.tr("_", "-"), value] }.
     to_h.
-    merge("HOST" => host).
+    merge("HOST" => host_uri.host).
     # TODO: Process "REFERER" header correctly.
     reject_keys("REFERER")
   host_request =
@@ -65,10 +75,10 @@ def forward(env, host_uri)
       headers
     ).
     tap do |r|
-      r.body_stream = env["rack.input"]
+      r.body_stream = env["rack.input"] if r.request_body_permitted?
     end
   host_response =
-    Net::HTTP.start(host_uri.host, host_uri.port, :use_ssl => uri.scheme == 'https') do |http|
+    Net::HTTP.start(host_uri.host, host_uri.port, :use_ssl => host_uri.scheme == 'https') do |http|
       http.request(host_request)
     end
   [
