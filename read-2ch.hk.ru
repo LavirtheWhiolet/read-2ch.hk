@@ -87,6 +87,6 @@ def forward(env, host_uri)
   ]
 end
 
-run lambda do |env|
+run(lambda do |env|
   forward(env, URI("http://2ch.hk"))
-end
+end)
