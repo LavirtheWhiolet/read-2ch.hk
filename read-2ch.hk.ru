@@ -36,6 +36,11 @@ class Hash
     reject { |key, value| keys.include? key }
   end
   
+  def rewrite(key, &f)
+    if self.has_key? key then self[key] = f.(self[key]); end
+    self
+  end
+  
 end
 
 class String
@@ -204,32 +209,29 @@ app = lambda do |env|
         # A cookie to unhide boards hidden due to Mizulina's rampage.
         unhiding_cookie = "usercode_auth=24ffaf6d82692d95746a61ef1c1436ce"
         # 
+        path = "/#{board}/res/#{thread}.json"
+        # 
         request =
           {
             "HTTP_COOKIE" => unhiding_cookie
           }.
+          merge(env).
+          rewrite("HTTP_COOKIE") do |value|
+            if not value =~ /usercode_auth=[^\=;]+/ then
+              value += "#{value}; #{unhiding_cookie}"
+            else
+              value
+            end
+          end.
           merge(
-            env.
-              map do |key, value|
-                case key
-                when "PATH_INFO"
-                  ["PATH_INFO", "/#{board}/res/#{thread}.json"]
-                when "HTTP_COOKIE"
-                  if not value =~ /usercode_auth=[^\=;]+/ then
-                    value += "; #{unhiding_cookie}"
-                  end
-                  [key, value]
-                else
-                  [key, value]
-                end
-              end.
-              to_h
-          ).
-          merge(
-            "HTTP_ACCEPT" => "application/json; charset=utf-8"
+            "HTTP_ACCEPT" => "application/json; charset=utf-8",
+            "PATH_INFO" => path,
+            "REQUEST_PATH" => path,
+            "REQUEST_URI" => path
           ).
           reject_keys(
-            "HTTP_ACCEPT_ENCODING"
+            "HTTP_ACCEPT_ENCODING",
+            "HTTP_CONNECTION_KEEP_ALIVE"
           )
         #
         forward(request, URI("http://2ch.hk"))
