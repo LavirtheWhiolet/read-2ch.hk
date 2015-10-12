@@ -184,17 +184,18 @@ class Read2ch_hk
   # Mizulina's rampage.
   def add_unhiding_cookie(env)
     unhiding_cookie = "usercode_auth=24ffaf6d82692d95746a61ef1c1436ce"
-    {
-      "HTTP_COOKIE" => unhiding_cookie
-    }.
-    merge(env).
-    rewrite("HTTP_COOKIE") do |value|
-      if not value =~ /usercode_auth=[^\=;]+/ then
-        value += "#{value}; #{unhiding_cookie}"
-      else
-        value
+    env =
+      {
+        "HTTP_COOKIE" => unhiding_cookie
+      }.
+      merge(env).
+      rewrite("HTTP_COOKIE") do |value|
+        if not value =~ /usercode_auth=[^\=;]+/ then
+          value += "#{value}; #{unhiding_cookie}"
+        else
+          value
+        end
       end
-    end
   end
   
   def thread_html(posts)
