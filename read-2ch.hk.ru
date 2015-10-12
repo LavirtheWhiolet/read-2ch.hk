@@ -53,12 +53,11 @@ class String
   
 end
 
-# Note: it calls +close+ on the Rack response's body (if applicable).
-def read_body(rack_response)
+# Note: it calls +close+ on +rack_response_body+ if applicable.
+def read1(rack_response_body)
   body = ""
-  rack_body = rack_response[2]
-  rack_body.each { |part| body << part }
-  rack_body.close() if rack_body.respond_to? :close
+  rack_response_body.each { |part| body << part }
+  rack_response_body.close() if rack_response_body.respond_to? :close
   return body
 end
 
@@ -237,15 +236,15 @@ app = lambda do |env|
         forward(request, URI("http://2ch.hk"))
       end
       #
-      if _2ch_hk_response_code != 200 then
+      if _2ch_hk_response_code != "200" then
         halt(forward(env, URI("http://2ch.hk")))
       end
       # 
-      _2ch_hk_response_body = read_body(_2ch_hk_response_body)
+      _2ch_hk_response_body = read1(_2ch_hk_response_body)
       #
       posts = _2ch_hk_response_body.
         map1 { |s| JSON.parse("{\"data\": #{s}}")['data'] }.
-        tap { |r| halt([503, {}, r["Error"]]) if r.is_a? Hash and r.key? "Error" }.
+        tap { |r| halt([503, {}, [r["Error"]]]) if r.is_a? Hash and r.key? "Error" }.
         map1 { |d| d['threads'][0]['posts'] }.
         map do |post|
           post = OpenStruct.new(post)
@@ -260,7 +259,7 @@ app = lambda do |env|
         {
           "Content-Type" => "text/html; charset=utf8"
         },
-        thread_template(board, posts)
+        [thread_template(board, posts)]
       ]
     #
     else
