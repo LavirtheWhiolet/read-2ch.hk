@@ -108,6 +108,104 @@ def forward(env, host_uri)
   ]
 end
 
+def thread_html(board, posts)
+  ERB.new(<<-ERB).result(binding)
+<html>
+<head>
+  <style>
+    * {
+      font-family: serif;
+    }
+    .reply {
+      padding: 0.8em;
+      margin-bottom: 0.25em;
+      border: 1px solid #CCC;
+      border-radius: 5px;
+    }
+    .post_file {
+      display: inline;
+      margin-right: 0.8em;
+      margin-top: 0.8em;
+      margin-bottom: 0.8em;
+    }
+    .post_header {
+      margin-bottom: 0.5em;
+      font-size: smaller;
+      color: #999;
+    }
+    .post_rel_num {
+      color: inherit;
+      font-weight: bold;
+      text-decoration: none;
+    }
+    .post_num {
+      color: inherit;
+      text-decoration: none;
+    }
+    .post_name {
+      color: inherit;
+      /*font-style: italic;*/
+    }
+    .post_date {
+    }
+    .post_subject {
+      color: inherit;
+      font-weight: bold;
+    }
+    span.spoiler {
+      background: #BBB;
+      color: #BBB;
+    }
+    span.spoiler:hover {
+      background: #FFFFFF;
+      color: #000000
+    }
+  </style>
+</head>
+<body>
+
+<% for post in posts %>
+<div class="reply">
+  <div class="post_header">
+    <a class="post_rel_num" id="rel<%=post.rel_num%>" href="#rel<%=post.rel_num%>">№<%=post.rel_num%>.</a>
+    <a class="post_num" id="<%=post.num%>" href="#<%=post.num%>">#<%=post.num%></a>
+    <% if post.email.empty? %> <span class="post_name"><%=post.name%></span> <% else %> <a class="post_name" href="<%=post.email%>"><%=post.name%></a> <% end %>
+    <span class="post_subject"><%=post.subject%></span>
+    (<span class="post_date"><%=post.date%></span>)
+  </div>
+  <% for post_file in post.files %>
+  <div class="post_file"><a href="http://2ch.hk/<%=board%>/<%=post_file.path%>"><img src="http://2ch.hk/<%=board%>/<%=post_file.thumbnail%>" name="<%=post_file.name%>"/></a></div>
+  <% end %>
+  <% if not post.files.empty? then %> <p/> <% end %>
+  <%=post.comment%>
+</div>
+<% end %>
+
+</body>
+</html>
+  ERB
+end
+
 run(lambda do |env|
-  forward(env, URI("http://2ch.hk"))
+  if /^\/(?<board>.*?)\/res\/(?<thread>.*?)\.html$/ =~ env["PATH_INFO"] and
+      board != "test"
+    # A cookie to unhide boards hidden due to Mizulina's rampage.
+    unhiding_cookie = "usercode_auth=24ffaf6d82692d95746a61ef1c1436ce"
+    env = env.
+      map do |key, value|
+        case key
+        when "PATH_INFO"
+          ["PATH_INFO", "/#{board}/res/#{thread}.json"]
+        when "HTTP_COOKIE"
+          if not value =~ /usercode_auth=[^\=;]+/ then
+            value += "; #{unhiding_cookie}"
+          end
+          [key, value]
+        else
+          [key, value]
+        end
+      end
+  else
+    forward(env, URI("http://2ch.hk"))
+  end
 end)
