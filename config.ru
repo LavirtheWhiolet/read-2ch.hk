@@ -206,16 +206,17 @@ class Read2ch_hk
   # Mizulina's rampage and Utils#forward()-s it to 2ch.hk.
   def forward_to_2ch_hk_and_unhide_some_content(env)
     unhiding_cookie = "usercode_auth=24ffaf6d82692d95746a61ef1c1436ce"
-    env =
+    env = env.
       {
         "HTTP_COOKIE" => unhiding_cookie
       }.
       merge(env).
       rewrite("HTTP_COOKIE") do |value|
-        if not value =~ /usercode_auth\=/ then
-          value += "#{value}; #{unhiding_cookie}"
+        unhiding_cookie_regexp = /usercode_auth\=[a-zA-Z0-9]+/
+        if value =~ unhiding_cookie_regexp then
+          value.gsub(unhiding_cookie_regexp, unhiding_cookie)
         else
-          value
+          value += "; #{unhiding_cookie}"
         end
       end
     forward(env, URI("http://2ch.hk"))
