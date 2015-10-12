@@ -151,6 +151,12 @@ class Read2ch_hk
   include Utils
   
   def call(env)
+    call0(env).finish()
+  end
+  
+  private
+  
+  def call0(env)
     allow_halt do
       if /^\/(?<board>.*?)\/res\/(?<thread>.*?)\.html$/ =~ env["PATH_INFO"] and
           board != "test"
