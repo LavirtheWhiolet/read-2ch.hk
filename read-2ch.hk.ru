@@ -204,7 +204,8 @@ run(lambda do |env|
         else
           [key, value]
         end
-      end
+      end.
+      reject_keys(
   else
     forward(env, URI("http://2ch.hk"))
   end
