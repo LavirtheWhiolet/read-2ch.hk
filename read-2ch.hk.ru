@@ -49,10 +49,10 @@ def forward(env, host_uri)
     map { |key, value| [key[/^HTTP_(.*)/, 1] || key[/^(CONTENT_.*)/, 1], value] }.
     reject { |key, value| key.nil? }.
     map { |key, value| [key.tr("_", "-"), value] }.
+    to_h.
+    merge("HOST" => host).
     # TODO: Process "REFERER" header correctly.
     reject_keys("REFERER")
-    to_h.
-    merge("HOST" => host)
   host_request =
     case env["REQUEST_METHOD"]
     when "GET" then Net::HTTP::Get
