@@ -205,8 +205,8 @@ class Read2ch_hk
   # Modifies +env+ to unhide some content on 2ch.hk which is hidden due to
   # Mizulina's rampage and Utils#forward()-s it to 2ch.hk.
   def forward_to_2ch_hk_and_unhide_some_content(env)
-    unhiding_cookie = "usercode_auth=24ffaf6d82692d95746a61ef1c1436ce"
-    env = env.
+    unhiding_cookie = "usercode_auth=e8e6990e3a5b96fbb466806a488f187f"
+    env =
       {
         "HTTP_COOKIE" => unhiding_cookie
       }.
