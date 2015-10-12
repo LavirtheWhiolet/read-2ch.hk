@@ -133,11 +133,13 @@ module Utils
       [host_response.body]
     ]
   end
-
+  
+  # calls +block+. Inside +block+ you may use #halt().
   def allow_halt(&block)
     catch(:halt, &block)
   end
-
+  
+  # returns from +block+ passed to #allow_halt() immediately.
   def halt(allow_halt_result = nil)
     throw(:halt, allow_halt_result)
   end
