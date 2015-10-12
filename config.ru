@@ -257,7 +257,7 @@ class Read2ch_hk
     }
     .post_name {
       color: inherit;
-      /*font-style: italic;*/
+      font-style: italic;
     }
     .post_date {
     }
