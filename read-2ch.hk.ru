@@ -54,74 +54,80 @@ class String
   
 end
 
-# Note: it calls +close+ on +rack_response_body+ if applicable.
-def read1(rack_response_body)
-  body = ""
-  rack_response_body.each { |part| body << part }
-  rack_response_body.close() if rack_response_body.respond_to? :close
-  return body
-end
+module Utils
 
-# forwards Rack +env+ to host at +host_uri+ (URI).
-# 
-# +SCRIPT_NAME+ is ignored.
-# 
-# It returns Rack response.
-# 
-# TODO: Do not read entire response body.
-# 
-def forward(env, host_uri)
-  headers = env.
-    map { |key, value| [key[/^HTTP_(.*)/, 1] || key[/^(CONTENT_.*)/, 1], value] }.
-    reject { |key, value| key.nil? }.
-    map { |key, value| [key.tr("_", "-"), value] }.
-    to_h.
-    merge("HOST" => host_uri.host).
-    # TODO: Process "REFERER" header correctly.
-    reject_keys("REFERER")
-  host_request =
-    case env["REQUEST_METHOD"]
-    when "GET" then Net::HTTP::Get
-    when "POST" then Net::HTTP::Post
-    when "HEAD" then Net::HTTP::Head
-    else raise "#{env["REQUEST_METHOD"]} requests forwarding is not implemented"
-    end.
-    new(
-      env["PATH_INFO"] + env["QUERY_STRING"].if_not_empty { |q| "?#{q}" },
-      headers
-    ).
-    tap do |r|
-      r.body_stream = env["rack.input"] if r.request_body_permitted?
-    end
-  host_response =
-    Net::HTTP.start(host_uri.host, host_uri.port, :use_ssl => host_uri.scheme == 'https') do |http|
-      http.request(host_request)
-    end
-  [
-    host_response.code,
-    host_response.headers.
-      map do |key, value|
-        case key.downcase
-        when "set-cookie"
-          # TODO: Process "domain" parameter of "set-cookie" correctly.
-          [key, value.gsub(/domain\=(.*?);/, "")]
-        else
-          [key, value]
-        end
-      end,
-    [host_response.body]
-  ]
-end
+  # Note: it calls +close+ on +rack_response_body+ if applicable.
+  def read1(rack_response_body)
+    body = ""
+    rack_response_body.each { |part| body << part }
+    rack_response_body.close() if rack_response_body.respond_to? :close
+    return body
+  end
 
-def allow_halt(&block)
-  catch(:halt, &block)
-end
+  # forwards Rack +env+ to host at +host_uri+ (URI).
+  # 
+  # +SCRIPT_NAME+ is ignored.
+  # 
+  # It returns Rack response.
+  # 
+  # TODO: Do not read entire response body.
+  # 
+  def forward(env, host_uri)
+    headers = env.
+      map { |key, value| [key[/^HTTP_(.*)/, 1] || key[/^(CONTENT_.*)/, 1], value] }.
+      reject { |key, value| key.nil? }.
+      map { |key, value| [key.tr("_", "-"), value] }.
+      to_h.
+      merge("HOST" => host_uri.host).
+      # TODO: Process "REFERER" header correctly.
+      reject_keys("REFERER")
+    host_request =
+      case env["REQUEST_METHOD"]
+      when "GET" then Net::HTTP::Get
+      when "POST" then Net::HTTP::Post
+      when "HEAD" then Net::HTTP::Head
+      else raise "#{env["REQUEST_METHOD"]} requests forwarding is not implemented"
+      end.
+      new(
+        env["PATH_INFO"] + env["QUERY_STRING"].if_not_empty { |q| "?#{q}" },
+        headers
+      ).
+      tap do |r|
+        r.body_stream = env["rack.input"] if r.request_body_permitted?
+      end
+    host_response =
+      Net::HTTP.start(host_uri.host, host_uri.port, :use_ssl => host_uri.scheme == 'https') do |http|
+        http.request(host_request)
+      end
+    [
+      host_response.code,
+      host_response.headers.
+        map do |key, value|
+          case key.downcase
+          when "set-cookie"
+            # TODO: Process "domain" parameter of "set-cookie" correctly.
+            [key, value.gsub(/domain\=(.*?);/, "")]
+          else
+            [key, value]
+          end
+        end,
+      [host_response.body]
+    ]
+  end
 
-def halt(allow_halt_result = nil)
-  throw(:halt, allow_halt_result)
+  def allow_halt(&block)
+    catch(:halt, &block)
+  end
+
+  def halt(allow_halt_result = nil)
+    throw(:halt, allow_halt_result)
+  end
+  
 end
 
 class Read2ch_hk
+  
+  include Utils
   
   def call(env)
     allow_halt do
