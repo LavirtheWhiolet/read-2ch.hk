@@ -130,8 +130,7 @@ class Read2ch_hk
         # Forward the request to 2ch.hk API.
         _2ch_hk_response_code, _2ch_hk_response_headers, _2ch_hk_response_body = begin
           path = "/#{board}/res/#{thread}.json"
-          request =
-            add_unhiding_cookie(env).
+          request = env.
             merge(
               "HTTP_ACCEPT" => "application/json; charset=utf-8",
               "PATH_INFO" => path,
@@ -195,7 +194,7 @@ class Read2ch_hk
       else
         value
       end
-    end.
+    end
   end
   
   def thread_html(posts)
