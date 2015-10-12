@@ -151,8 +151,15 @@ class Read2ch_hk
           forward_to_2ch_hk_and_unhide_some_content(request)
         end
         #
-        if _2ch_hk_response_code != "200" then
-          halt(forward_to_2ch_hk_and_unhide_some_content(env))
+        if _2ch_hk_response_code == 301 then
+          halt [
+            301,
+            _2ch_hk_response_headers.
+              rewrite("location") { |uri| URI(uri).tap { |u| u.host = env["HTTP_HOST"] } },
+            _2ch_hk_response_body
+          ]
+        elsif _2ch_hk_response_code != 200 then
+          halt forward_to_2ch_hk_and_unhide_some_content(env)
         end
         #
         posts = _2ch_hk_response_body.
@@ -172,7 +179,7 @@ class Read2ch_hk
           {
             "Content-Type" => "text/html; charset=utf8"
           },
-          [thread_html(posts)]
+          [thread_html(board, posts)]
         ]
       #
       else
@@ -193,7 +200,7 @@ class Read2ch_hk
       }.
       merge(env).
       rewrite("HTTP_COOKIE") do |value|
-        if not value =~ /usercode_auth=[^\=;]+/ then
+        if not value =~ /usercode_auth\=/ then
           value += "#{value}; #{unhiding_cookie}"
         else
           value
@@ -202,7 +209,7 @@ class Read2ch_hk
     forward(env, URI("http://2ch.hk"))
   end
   
-  def thread_html(posts)
+  def thread_html(board, posts)
     ERB.new(<<-ERB).result(binding)
 <html>
 <head>
@@ -246,13 +253,13 @@ class Read2ch_hk
       color: inherit;
       font-weight: bold;
     }
-    span.spoiler {
+    span.spoiler, span.spoiler a {
       background: #BBB;
       color: #BBB;
     }
-    span.spoiler:hover {
-      background: #FFFFFF;
-      color: #000000
+    span.spoiler:hover, span.spoiler:hover a {
+      background: inherit;
+      color: inherit;
     }
   </style>
 </head>
@@ -268,7 +275,7 @@ class Read2ch_hk
     (<span class="post_date"><%=post.date%></span>)
   </div>
   <% for post_file in post.files %>
-  <div class="post_file"><a href="<%=post_file.path%>"><img src="<%=post_file.thumbnail%>" name="<%=post_file.name%>"/></a></div>
+  <div class="post_file"><a href="http://2ch.hk/<%=board%>/<%=post_file.path%>"><img src="http://2ch.hk/<%=board%>/<%=post_file.thumbnail%>" name="<%=post_file.name%>"/></a></div>
   <% end %>
   <% if not post.files.empty? then %> <p/> <% end %>
   <%=post.comment%>
