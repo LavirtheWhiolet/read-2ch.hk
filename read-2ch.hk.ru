@@ -75,7 +75,7 @@ module Utils
   # 
   # +SCRIPT_NAME+ is ignored.
   # 
-  # It returns Rack response.
+  # It returns Rack::Response.
   # 
   # TODO: Do not read entire response body.
   # 
@@ -106,7 +106,8 @@ module Utils
       Net::HTTP.start(host_uri.host, host_uri.port, :use_ssl => host_uri.scheme == 'https') do |http|
         http.request(host_request)
       end
-    return [
+    return Rack::Response.new(
+      host_response.body || "",
       host_response.code,
       host_response.headers.
         map do |key, value|
@@ -115,7 +116,7 @@ module Utils
             # TODO: Process "domain" parameter of "set-cookie" correctly.
             [key, value.gsub(/domain\=(.*?);/, "")]
           when "location"
-            if host_response.code == "301" then
+            if host_response.code.to_i == 301 then
               value = begin
                 this_host_uri = URI("http://#{env["HTTP_HOST"]}")
                 v = URI(value)
@@ -129,9 +130,8 @@ module Utils
           else
             [key, value]
           end
-        end,
-      [host_response.body]
-    ]
+        end
+    )
   end
   
   # calls +block+. Inside +block+ you may use #halt().
@@ -154,7 +154,7 @@ class Read2ch_hk
     allow_halt do
       if /^\/(?<board>.*?)\/res\/(?<thread>.*?)\.html$/ =~ env["PATH_INFO"] and
           board != "test"
-        _2ch_hk_response_code, _2ch_hk_response_headers, _2ch_hk_response_body = begin
+        dvach_hk_response = begin
           path = "/#{board}/res/#{thread}.json"
           request = env.
             merge(
@@ -169,12 +169,12 @@ class Read2ch_hk
             )
           forward_to_2ch_hk_and_unhide_some_content(request)
         end
-        if _2ch_hk_response_code != "200" then
-          halt forward_to_2ch_hk_and_unhide_some_content(env)
+        if dvach_hk_response.status != 200 then
+          halt(dvach_hk_response)
         end
-        posts = _2ch_hk_response_body.
+        posts = dvach_hk_response.body.
           map1 { |b| JSON.parse("{\"data\": #{read1(b)}}")['data'] }.
-          tap { |b| halt([503, {}, [b["Error"]]]) if b.is_a? Hash and b.key? "Error" }.
+          tap { |b| halt(Rack::Response.new(b["Error"], 503)) if b.is_a? Hash and b.key? "Error" }.
           map1 { |b| b['threads'][0]['posts'] }.
           map do |post|
             post = OpenStruct.new(post)
@@ -183,13 +183,11 @@ class Read2ch_hk
             post
           end.
           each_with_index { |post, i| post.rel_num = i+1 }
-        return [
+        return Rack::Response.new(
+          thread_html(board, posts),
           200,
-          {
-            "Content-Type" => "text/html; charset=utf8"
-          },
-          [thread_html(board, posts)]
-        ]
+          "Content-Type" => "text/html; charset=utf8"
+        )
       else
         forward_to_2ch_hk_and_unhide_some_content(env)
       end
