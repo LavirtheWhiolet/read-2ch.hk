@@ -54,6 +54,8 @@ end
 # 
 # It returns Rack response.
 # 
+# TODO: Do not read entire response body.
+# 
 def forward(env, host_uri)
   headers = env.
     map { |key, value| [key[/^HTTP_(.*)/, 1] || key[/^(CONTENT_.*)/, 1], value] }.
