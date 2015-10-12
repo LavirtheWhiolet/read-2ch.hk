@@ -109,19 +109,15 @@ module Utils
             [key, value.gsub(/domain\=(.*?);/, "")]
           when "location"
             if host_response.code == "301" then
-              this_host_uri = URI("http://#{env["HTTP_HOST"]}")
-              [
-                key,
-                begin
-                  l = URI(value)
-                  l.host = this_host_uri.host
-                  l.port = this_host_uri.port
-                  l.to_s
-                end
-              ]
-            else
-              [key, value]
+              value = begin
+                this_host_uri = URI("http://#{env["HTTP_HOST"]}")
+                v = URI(value)
+                v.host = this_host_uri.host
+                v.port = this_host_uri.port
+                v.to_s
+              end
             end
+            [key, value]
           else
             [key, value]
           end
@@ -146,7 +142,6 @@ class Read2ch_hk
   
   def call(env)
     allow_halt do
-      #
       if /^\/(?<board>.*?)\/res\/(?<thread>.*?)\.html$/ =~ env["PATH_INFO"] and
           board != "test"
         # Query 2ch.hk API.
@@ -165,11 +160,9 @@ class Read2ch_hk
             )
           forward_to_2ch_hk_and_unhide_some_content(request)
         end
-        #
         if _2ch_hk_response_code != "200" then
           halt forward_to_2ch_hk_and_unhide_some_content(env)
         end
-        #
         posts = _2ch_hk_response_body.
           map1 { |b| JSON.parse("{\"data\": #{read1(b)}}")['data'] }.
           tap { |b| halt([503, {}, [b["Error"]]]) if b.is_a? Hash and b.key? "Error" }.
@@ -181,7 +174,6 @@ class Read2ch_hk
             post
           end.
           each_with_index { |post, i| post.rel_num = i+1 }
-        #
         [
           200,
           {
@@ -189,7 +181,6 @@ class Read2ch_hk
           },
           [thread_html(board, posts)]
         ]
-      #
       else
         forward_to_2ch_hk_and_unhide_some_content(env)
       end
