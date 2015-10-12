@@ -112,8 +112,95 @@ def forward(env, host_uri)
   ]
 end
 
-def thread_template(board, posts)
-  ERB.new(<<-ERB).result(binding)
+def allow_halt(&block)
+  catch(:halt, &block)
+end
+
+def halt(result = nil)
+  throw(:halt, result)
+end
+
+class Read2ch_hk
+  
+  def call(env)
+    allow_halt do
+      #
+      if /^\/(?<board>.*?)\/res\/(?<thread>.*?)\.html$/ =~ env["PATH_INFO"] and
+          board != "test"
+        # Forward the request to 2ch.hk API.
+        _2ch_hk_response_code, _2ch_hk_response_headers, _2ch_hk_response_body = begin
+          # 
+          path = "/#{board}/res/#{thread}.json"
+          # 
+          request =
+            add_unhiding_cookie(env).
+            merge(
+              "HTTP_ACCEPT" => "application/json; charset=utf-8",
+              "PATH_INFO" => path,
+              "REQUEST_PATH" => path,
+              "REQUEST_URI" => path
+            ).
+            reject_keys(
+              "HTTP_ACCEPT_ENCODING",
+              "HTTP_CONNECTION_KEEP_ALIVE"
+            )
+          #
+          forward(request, URI("http://2ch.hk"))
+        end
+        #
+        if _2ch_hk_response_code != "200" then
+          halt(forward(env, URI("http://2ch.hk")))
+        end
+        # 
+        _2ch_hk_response_body = read1(_2ch_hk_response_body)
+        #
+        posts = _2ch_hk_response_body.
+          map1 { |s| JSON.parse("{\"data\": #{s}}")['data'] }.
+          tap { |r| halt([503, {}, [r["Error"]]]) if r.is_a? Hash and r.key? "Error" }.
+          map1 { |d| d['threads'][0]['posts'] }.
+          map do |post|
+            post = OpenStruct.new(post)
+            post.files ||= []
+            post.files.map! { |file| OpenStruct.new(file) }
+            post
+          end.
+          each_with_index { |post, i| post.rel_num = i+1 }
+        #
+        [
+          200,
+          {
+            "Content-Type" => "text/html; charset=utf8"
+          },
+          [thread_html(posts)]
+        ]
+      #
+      else
+        forward(env, URI("http://2ch.hk"))
+      end
+    end
+  end
+  
+  private
+  
+  # Adds a cookie to Rack +env+ to unhide some boards which are hidden due to
+  # Mizulina's rampage.
+  def add_unhiding_cookie(env)
+    unhiding_cookie = "usercode_auth=24ffaf6d82692d95746a61ef1c1436ce"
+    {
+      "HTTP_COOKIE" => unhiding_cookie
+    }.
+    merge(env).
+    rewrite("HTTP_COOKIE") do |value|
+      if not value =~ /usercode_auth=[^\=;]+/ then
+        value += "#{value}; #{unhiding_cookie}"
+      else
+        value
+      end
+    end.
+  end
+  
+  def thread_html(posts)
+    ERB.new(<<-ERB).result(binding)
 <html>
 <head>
   <style>
@@ -178,7 +265,7 @@ def thread_template(board, posts)
     (<span class="post_date"><%=post.date%></span>)
   </div>
   <% for post_file in post.files %>
-  <div class="post_file"><a href="http://2ch.hk/<%=board%>/<%=post_file.path%>"><img src="http://2ch.hk/<%=board%>/<%=post_file.thumbnail%>" name="<%=post_file.name%>"/></a></div>
+  <div class="post_file"><a href="<%=post_file.path%>"><img src="<%=post_file.thumbnail%>" name="<%=post_file.name%>"/></a></div>
   <% end %>
   <% if not post.files.empty? then %> <p/> <% end %>
   <%=post.comment%>
@@ -187,85 +274,9 @@ def thread_template(board, posts)
 
 </body>
 </html>
-  ERB
-end
-
-def allow_halt(&block)
-  catch(:halt, &block)
-end
-
-def halt(result = nil)
-  throw(:halt, result)
-end
-
-app = lambda do |env|
-  allow_halt do
-    #
-    if /^\/(?<board>.*?)\/res\/(?<thread>.*?)\.html$/ =~ env["PATH_INFO"] and
-        board != "test"
-      # Forward the request to 2ch.hk API.
-      _2ch_hk_response_code, _2ch_hk_response_headers, _2ch_hk_response_body = begin
-        # A cookie to unhide boards hidden due to Mizulina's rampage.
-        unhiding_cookie = "usercode_auth=24ffaf6d82692d95746a61ef1c1436ce"
-        # 
-        path = "/#{board}/res/#{thread}.json"
-        # 
-        request =
-          {
-            "HTTP_COOKIE" => unhiding_cookie
-          }.
-          merge(env).
-          rewrite("HTTP_COOKIE") do |value|
-            if not value =~ /usercode_auth=[^\=;]+/ then
-              value += "#{value}; #{unhiding_cookie}"
-            else
-              value
-            end
-          end.
-          merge(
-            "HTTP_ACCEPT" => "application/json; charset=utf-8",
-            "PATH_INFO" => path,
-            "REQUEST_PATH" => path,
-            "REQUEST_URI" => path
-          ).
-          reject_keys(
-            "HTTP_ACCEPT_ENCODING",
-            "HTTP_CONNECTION_KEEP_ALIVE"
-          )
-        #
-        forward(request, URI("http://2ch.hk"))
-      end
-      #
-      if _2ch_hk_response_code != "200" then
-        halt(forward(env, URI("http://2ch.hk")))
-      end
-      # 
-      _2ch_hk_response_body = read1(_2ch_hk_response_body)
-      #
-      posts = _2ch_hk_response_body.
-        map1 { |s| JSON.parse("{\"data\": #{s}}")['data'] }.
-        tap { |r| halt([503, {}, [r["Error"]]]) if r.is_a? Hash and r.key? "Error" }.
-        map1 { |d| d['threads'][0]['posts'] }.
-        map do |post|
-          post = OpenStruct.new(post)
-          post.files ||= []
-          post.files.map! { |file| OpenStruct.new(file) }
-          post
-        end.
-        each_with_index { |post, i| post.rel_num = i+1 }
-      #
-      [
-        200,
-        {
-          "Content-Type" => "text/html; charset=utf8"
-        },
-        [thread_template(board, posts)]
-      ]
-    #
-    else
-      forward(env, URI("http://2ch.hk"))
-    end
+    ERB
   end
+
 end
 
-run app
+run Read2ch_hk.new
