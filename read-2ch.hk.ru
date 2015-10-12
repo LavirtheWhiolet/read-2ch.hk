@@ -2,11 +2,20 @@ require 'rack'
 require 'net/http'
 require 'json'
 require 'ostruct'
+require 'erb'
 
 class Array
   
   def to_h
     reduce({}) { |r, e| r[e[0]] = e[1]; r }
+  end
+  
+end
+
+class Object
+  
+  def map1(&f)
+    f.(self)
   end
   
 end
