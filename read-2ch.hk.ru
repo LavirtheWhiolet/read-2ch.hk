@@ -142,11 +142,11 @@ class Read2ch_hk
               "HTTP_ACCEPT_ENCODING",
               "HTTP_CONNECTION_KEEP_ALIVE"
             )
-          forward_to_2ch_hk_and_unhide_some_boards(request)
+          forward_to_2ch_hk_and_unhide_some_content(request)
         end
         #
         if _2ch_hk_response_code != "200" then
-          halt(forward_to_2ch_hk_and_unhide_some_boards(env))
+          halt(forward_to_2ch_hk_and_unhide_some_content(env))
         end
         #
         posts = _2ch_hk_response_body.
@@ -170,18 +170,18 @@ class Read2ch_hk
         ]
       #
       else
-        forward_to_2ch_hk_and_unhide_some_boards(env)
+        forward_to_2ch_hk_and_unhide_some_content(env)
       end
     end
   end
   
   private
   
-  def forward_to_2ch_hk_and_unhide_some_boards(env)
+  def forward_to_2ch_hk_and_unhide_some_content(env)
     forward(add_unhiding_cookie(env), URI("http://2ch.hk"))
   end
   
-  # Adds a cookie to Rack +env+ to unhide some boards which are hidden due to
+  # Adds a cookie to Rack +env+ to unhide some content which is hidden due to
   # Mizulina's rampage.
   def add_unhiding_cookie(env)
     unhiding_cookie = "usercode_auth=24ffaf6d82692d95746a61ef1c1436ce"
