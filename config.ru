@@ -220,7 +220,7 @@ class Read2ch_hk
         end
       end.
       merge(
-        "HTTP_USER_AGENT" => "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:41.0) Gecko/20100101 Firefox/41.0"
+        "HTTP_USER_AGENT" => "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
       )
     forward(env, URI("http://2ch.hk"))
   end
