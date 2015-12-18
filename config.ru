@@ -277,6 +277,9 @@ class Read2ch_hk
       background: inherit;
       color: inherit;
     }
+    span.unkfunc {
+      color: #789922;
+    }
   </style>
 </head>
 <body>
