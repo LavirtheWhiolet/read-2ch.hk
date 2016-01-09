@@ -118,7 +118,7 @@ module Utils
           when "location"
             if host_response.code.to_i == 301 then
               value = begin
-                this_host_uri = URI("http://#{env["HTTP_HOST"]}")
+                this_host_uri = URI("http://#{env["HTTP_HOST"]}")  # TODO: http or https!
                 v = URI(value)
                 v.host = this_host_uri.host
                 v.port = this_host_uri.port
