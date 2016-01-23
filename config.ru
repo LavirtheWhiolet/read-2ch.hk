@@ -119,9 +119,10 @@ module Utils
             if host_response.code.to_i == 301 then
               value = begin
                 v = URI(value)
-                this_host_uri = URI("http://#{env["HTTP_HOST"]}")  # TODO: http or https!
+                this_host_uri = URI("http://#{env["HTTP_HOST"]}")
                 v.host = this_host_uri.host
                 v.port = this_host_uri.port
+                v.scheme = this_host_uri.scheme  # TODO: Get this host's scheme.
                 v.path = File.join(env["SCRIPT_NAME"] || '', v.path)
                 v.to_s
               end
@@ -222,7 +223,7 @@ class Read2ch_hk
       merge(
         "HTTP_USER_AGENT" => "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0"
       )
-    forward(env, URI("http://2ch.hk"))
+    forward(env, URI("https://2ch.hk"))
   end
   
   def thread_html(board, posts)
