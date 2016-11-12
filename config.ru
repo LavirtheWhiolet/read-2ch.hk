@@ -230,6 +230,7 @@ class Read2ch_hk
     ERB.new(<<-ERB).result(binding)
 <html>
 <head>
+  <title>2ch.hk/<%=board%>/res/<%=posts.first.num%>.html</title>
   <style>
     * {
       font-family: serif;
