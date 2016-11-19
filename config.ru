@@ -296,7 +296,7 @@ class Read2ch_hk
     (<span class="post_date"><%=post.date%></span>)
   </div>
   <% for post_file in post.files %>
-  <div class="post_file"><a href="/<%=board%>/<%=post_file.path%>" target="_blank"><img src="/<%=board%>/<%=post_file.thumbnail%>" name="<%=post_file.name%>"/></a></div>
+  <div class="post_file"><a href="<%=post_file.path%>" target="_blank"><img src="<%=post_file.thumbnail%>" name="<%=post_file.name%>"/></a></div>
   <% end %>
   <% if not post.files.empty? then %> <p/> <% end %>
   <%=post.comment%>
